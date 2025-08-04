@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 from website_monitor import WebsiteMonitor
@@ -112,13 +113,14 @@ class WebhookMonitoringBot:
             
             logger.info("Бот запущен!")
             
-            # Используем простой polling без сложной логики
+            # Используем простой polling
             await self.application.initialize()
             await self.application.start()
             await self.application.updater.start_polling()
             
-            # Ждем завершения
-            await self.application.updater.idle()
+            # Ждем завершения через бесконечный цикл
+            while True:
+                await asyncio.sleep(1)
             
         except Exception as e:
             logger.error(f"Ошибка при запуске бота: {e}")
