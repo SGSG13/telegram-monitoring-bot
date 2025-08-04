@@ -140,7 +140,14 @@ class MonitoringBot:
                 
                 # Отправляем уведомление если найдены имена
                 if found_names:
-                    asyncio.run(self.send_notification(found_names))
+                    # Создаем новый event loop для асинхронной операции
+                    try:
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        loop.run_until_complete(self.send_notification(found_names))
+                        loop.close()
+                    except Exception as e:
+                        logger.error(f"Ошибка при отправке уведомления: {e}")
                 
                 # Ждем перед следующей проверкой
                 time.sleep(600)  # 10 минут
@@ -159,8 +166,12 @@ class MonitoringBot:
     
     async def run(self):
         """Запускает бота"""
-        self.application = Application.builder().token(self.bot_token).build()
-        await self.setup_handlers()
-        
-        logger.info("Бот запущен!")
-        await self.application.run_polling() 
+        try:
+            self.application = Application.builder().token(self.bot_token).build()
+            await self.setup_handlers()
+            
+            logger.info("Бот запущен!")
+            await self.application.run_polling(allowed_updates=Update.ALL_TYPES)
+        except Exception as e:
+            logger.error(f"Ошибка при запуске бота: {e}")
+            raise 

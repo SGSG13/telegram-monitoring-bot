@@ -53,12 +53,16 @@ async def main():
         bot = MonitoringBot(TELEGRAM_BOT_TOKEN, TELEGRAM_USER_ID, monitor)
         
         logger.info("✅ Бот запущен и готов к работе!")
+        
+        # Запускаем бота правильно
         await bot.run()
         
     except KeyboardInterrupt:
         logger.info("Бот остановлен пользователем")
     except Exception as e:
         logger.error(f"Ошибка при запуске бота: {e}")
+        import traceback
+        logger.error(f"Полная ошибка: {traceback.format_exc()}")
 
 if __name__ == "__main__":
     asyncio.run(main()) 
