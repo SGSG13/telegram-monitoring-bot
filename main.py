@@ -19,21 +19,34 @@ bot_instance = None
 
 async def healthcheck_handler(request):
     """Обработчик для healthcheck"""
-    return web.Response(text="OK", status=200)
+    return web.Response(text="OK", status=200, content_type='text/plain')
 
 async def start_web_server():
     """Запускает веб-сервер для healthcheck"""
-    app = web.Application()
-    app.router.add_get('/', healthcheck_handler)
-    app.router.add_get('/health', healthcheck_handler)
-    
-    port = int(os.environ.get('PORT', 8080))
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', port)
-    await site.start()
-    logger.info(f"Веб-сервер запущен на порту {port}")
-    return runner
+    try:
+        app = web.Application()
+        app.router.add_get('/', healthcheck_handler)
+        app.router.add_get('/health', healthcheck_handler)
+        
+        # Добавляем обработчик ошибок
+        async def error_handler(request):
+            return web.Response(text="Internal Server Error", status=500)
+        
+        app.router.add_get('/error', error_handler)
+        
+        port = int(os.environ.get('PORT', 8080))
+        logger.info(f"Запуск веб-сервера на порту {port}")
+        
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, '0.0.0.0', port)
+        await site.start()
+        
+        logger.info(f"✅ Веб-сервер успешно запущен на порту {port}")
+        return runner
+    except Exception as e:
+        logger.error(f"❌ Ошибка запуска веб-сервера: {e}")
+        raise
 
 def validate_config():
     """Проверяет корректность конфигурации"""
