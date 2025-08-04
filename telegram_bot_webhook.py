@@ -87,8 +87,31 @@ class WebhookMonitoringBot:
                 
                 # Отправляем уведомление если найдены имена
                 if found_names:
-                    # Простая отправка уведомления без сложной асинхронной логики
                     logger.info(f"Найдены имена: {found_names}")
+                    
+                    # Отправляем уведомление в Telegram
+                    try:
+                        import asyncio
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        
+                        async def send_notification():
+                            message = (
+                                f"🎉 УРА! Найдены ваши данные!\n\n"
+                                f"📝 Найденные имена: {', '.join(found_names)}\n"
+                                f"🌐 Сайт: {self.monitor.target_url}\n"
+                                f"⏰ Время: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                            )
+                            await self.application.bot.send_message(
+                                chat_id=self.user_id,
+                                text=message
+                            )
+                        
+                        loop.run_until_complete(send_notification())
+                        loop.close()
+                        
+                    except Exception as e:
+                        logger.error(f"Ошибка при отправке уведомления: {e}")
                 
                 # Ждем перед следующей проверкой
                 time.sleep(600)  # 10 минут
