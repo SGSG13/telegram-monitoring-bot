@@ -2,8 +2,8 @@ services:
   - type: worker
     name: telegram-monitoring-bot
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
+    buildCommand: pip3 install -r requirements.txt
+    startCommand: python3 main.py
     envVars:
       - key: TELEGRAM_BOT_TOKEN
         value: your_bot_token_here
