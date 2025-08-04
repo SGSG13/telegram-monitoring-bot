@@ -2,7 +2,7 @@ import asyncio
 import logging
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_USER_ID, TARGET_URL, SEARCH_NAMES, CHECK_INTERVAL_MINUTES, LOG_LEVEL
 from website_monitor import WebsiteMonitor
-from telegram_bot import MonitoringBot
+from telegram_bot_simple import SimpleMonitoringBot
 
 # Настройка логирования
 logging.basicConfig(
@@ -50,7 +50,7 @@ async def main():
         monitor = WebsiteMonitor(TARGET_URL, SEARCH_NAMES)
         
         # Создаем и запускаем бота
-        bot = MonitoringBot(TELEGRAM_BOT_TOKEN, TELEGRAM_USER_ID, monitor)
+        bot = SimpleMonitoringBot(TELEGRAM_BOT_TOKEN, TELEGRAM_USER_ID, monitor)
         
         logger.info("✅ Бот запущен и готов к работе!")
         
