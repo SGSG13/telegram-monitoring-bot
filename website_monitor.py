@@ -26,24 +26,36 @@ class WebsiteMonitor:
             return None
     
     def search_names_in_content(self, content: str) -> List[str]:
-        """Ищет имена в содержимом страницы"""
+        """Ищет имена в содержимом страницы и проверяет статус выезда"""
         soup = BeautifulSoup(content, 'html.parser')
-        text_content = soup.get_text()
         
         found_names = []
         for search_name in self.search_names:
             search_name_lower = search_name.lower()
             
-            # Ищем частичные совпадения
-            if search_name_lower in text_content.lower():
-                # Находим полное имя/фамилию в контексте
-                full_name = self._find_full_name_in_context(text_content, search_name)
-                if full_name:
-                    found_names.append(full_name)
-                    logger.info(f"Найдено имя: {full_name} (поиск: {search_name})")
-                else:
-                    found_names.append(search_name)
-                    logger.info(f"Найдено имя: {search_name}")
+            # Ищем таблицы на странице
+            tables = soup.find_all('table')
+            for table in tables:
+                rows = table.find_all('tr')
+                for row in rows:
+                    cells = row.find_all(['td', 'th'])
+                    if len(cells) >= 6:  # Проверяем, что есть минимум 6 ячеек
+                        # 5-я ячейка (индекс 4) - имя
+                        name_cell = cells[4].get_text().strip()
+                        # 4-я ячейка (индекс 3) - статус выезда
+                        status_cell = cells[3].get_text().strip()
+                        
+                        # Проверяем, содержит ли 5-я ячейка искомое имя
+                        if search_name_lower in name_cell.lower():
+                            # Проверяем статус в 4-й ячейке
+                            if status_cell != " : " and ":" in status_cell and len(status_cell) > 3:
+                                # Машина выехала!
+                                found_names.append(f"{name_cell} - ВЫЕХАЛА: {status_cell}")
+                                logger.info(f"Машина выехала! {name_cell} - {status_cell}")
+                            else:
+                                # Имя найдено, но машина еще не выехала
+                                found_names.append(f"{name_cell} - ОЖИДАЕТ: {status_cell}")
+                                logger.info(f"Имя найдено, но машина не выехала: {name_cell} - {status_cell}")
         
         return found_names
     

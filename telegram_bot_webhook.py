@@ -50,15 +50,34 @@ class WebhookMonitoringBot:
     
     async def check_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Обработчик команды /check - выполнить проверку сейчас"""
-        await update.message.reply_text("🔍 Выполняю проверку...")
+        await update.message.reply_text("🔍 Выполняю проверку статуса таможни...")
         
         try:
             found_names = self.monitor.check_for_names()
             if found_names:
-                message = f"✅ Найдены имена: {', '.join(found_names)}"
+                # Формируем сообщение в зависимости от статуса
+                if any("ВЫЕХАЛА" in name for name in found_names):
+                    message = (
+                        f"🚗 УРА! ВАША МАШИНА ВЫЕХАЛА ИЗ ТАМОЖНИ!\n\n"
+                        f"📝 Статус:\n" + "\n".join(found_names) + f"\n\n"
+                        f"🌐 Сайт: {self.monitor.target_url}\n"
+                        f"⏰ Время проверки: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                    )
+                else:
+                    message = (
+                        f"📋 Текущий статус:\n\n"
+                        f"📝 Информация:\n" + "\n".join(found_names) + f"\n\n"
+                        f"🌐 Сайт: {self.monitor.target_url}\n"
+                        f"⏰ Время проверки: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                    )
                 await update.message.reply_text(message)
             else:
-                await update.message.reply_text("❌ Имена не найдены")
+                message = (
+                    f"❌ Ваше имя не найдено в таблице\n\n"
+                    f"🌐 Сайт: {self.monitor.target_url}\n"
+                    f"⏰ Время проверки: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                )
+                await update.message.reply_text(message)
         except Exception as e:
             await update.message.reply_text(f"❌ Ошибка при проверке: {e}")
     
@@ -96,12 +115,22 @@ class WebhookMonitoringBot:
                         asyncio.set_event_loop(loop)
                         
                         async def send_notification():
-                            message = (
-                                f"🎉 УРА! Найдены ваши данные!\n\n"
-                                f"📝 Найденные имена: {', '.join(found_names)}\n"
-                                f"🌐 Сайт: {self.monitor.target_url}\n"
-                                f"⏰ Время: {time.strftime('%Y-%m-%d %H:%M:%S')}"
-                            )
+                            # Формируем сообщение в зависимости от статуса
+                            if any("ВЫЕХАЛА" in name for name in found_names):
+                                message = (
+                                    f"🚗 УРА! ВАША МАШИНА ВЫЕХАЛА ИЗ ТАМОЖНИ!\n\n"
+                                    f"📝 Статус:\n" + "\n".join(found_names) + f"\n\n"
+                                    f"🌐 Сайт: {self.monitor.target_url}\n"
+                                    f"⏰ Время обнаружения: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                                )
+                            else:
+                                message = (
+                                    f"📋 Обновление статуса:\n\n"
+                                    f"📝 Информация:\n" + "\n".join(found_names) + f"\n\n"
+                                    f"🌐 Сайт: {self.monitor.target_url}\n"
+                                    f"⏰ Время проверки: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                                )
+                            
                             await self.application.bot.send_message(
                                 chat_id=self.user_id,
                                 text=message
