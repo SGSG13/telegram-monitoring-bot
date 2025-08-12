@@ -104,43 +104,41 @@ class WebhookMonitoringBot:
             try:
                 found_names = self.monitor.check_for_names()
                 
-                # Отправляем уведомление если найдены имена
+                # Отправляем уведомление ТОЛЬКО если машина выехала
                 if found_names:
                     logger.info(f"Найдены имена: {found_names}")
                     
-                    # Отправляем уведомление в Telegram
-                    try:
-                        import asyncio
-                        loop = asyncio.new_event_loop()
-                        asyncio.set_event_loop(loop)
-                        
-                        async def send_notification():
-                            # Формируем сообщение в зависимости от статуса
-                            if any("ВЫЕХАЛА" in name for name in found_names):
+                    # Проверяем, есть ли статус "ВЫЕХАЛА"
+                    has_exit = any("ВЫЕХАЛА" in name for name in found_names)
+                    
+                    if has_exit:
+                        # Отправляем уведомление только при выезде
+                        try:
+                            import asyncio
+                            loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(loop)
+                            
+                            async def send_notification():
                                 message = (
                                     f"🚗 УРА! ВАША МАШИНА ВЫЕХАЛА ИЗ ТАМОЖНИ!\n\n"
                                     f"📝 Статус:\n" + "\n".join(found_names) + f"\n\n"
                                     f"🌐 Сайт: {self.monitor.target_url}\n"
                                     f"⏰ Время обнаружения: {time.strftime('%Y-%m-%d %H:%M:%S')}"
                                 )
-                            else:
-                                message = (
-                                    f"📋 Обновление статуса:\n\n"
-                                    f"📝 Информация:\n" + "\n".join(found_names) + f"\n\n"
-                                    f"🌐 Сайт: {self.monitor.target_url}\n"
-                                    f"⏰ Время проверки: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                                
+                                await self.application.bot.send_message(
+                                    chat_id=self.user_id,
+                                    text=message
                                 )
                             
-                            await self.application.bot.send_message(
-                                chat_id=self.user_id,
-                                text=message
-                            )
-                        
-                        loop.run_until_complete(send_notification())
-                        loop.close()
-                        
-                    except Exception as e:
-                        logger.error(f"Ошибка при отправке уведомления: {e}")
+                            loop.run_until_complete(send_notification())
+                            loop.close()
+                            
+                        except Exception as e:
+                            logger.error(f"Ошибка при отправке уведомления: {e}")
+                    else:
+                        # Логируем, но не отправляем уведомление
+                        logger.info(f"Имя найдено, но машина еще не выехала: {found_names}")
                 
                 # Ждем перед следующей проверкой
                 time.sleep(600)  # 10 минут
